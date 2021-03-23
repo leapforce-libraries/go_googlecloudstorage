@@ -5,11 +5,14 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"time"
 
 	"cloud.google.com/go/storage"
 
 	errortools "github.com/leapforce-libraries/go_errortools"
 )
+
+const timestampLayout string = "2006-01-02 15:04:05"
 
 type Map struct {
 	objectHandle *storage.ObjectHandle
@@ -59,6 +62,24 @@ func (m *Map) Get(key string) (*string, *errortools.Error) {
 	return &value, nil
 }
 
+func (m *Map) GetTimestamp(key string) (*time.Time, *errortools.Error) {
+	value, e := m.Get(key)
+	if e != nil {
+		return nil, e
+	}
+
+	if value == nil {
+		return nil, nil
+	}
+
+	t, err := time.Parse(timestampLayout, *value)
+	if err != nil {
+		return nil, errortools.ErrorMessage(err)
+	}
+
+	return &t, nil
+}
+
 func (m *Map) Set(key string, value string) *errortools.Error {
 	if m == nil {
 		return errortools.ErrorMessage("Map is a nil pointer")
@@ -83,4 +104,8 @@ func (m *Map) Set(key string, value string) *errortools.Error {
 	}
 
 	return nil
+}
+
+func (m *Map) SetTimestamp(key string, value time.Time) *errortools.Error {
+	return m.Set(key, value.Format(timestampLayout))
 }
