@@ -1,7 +1,6 @@
 package googlecloudstorage
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -12,11 +11,9 @@ import (
 	errortools "github.com/leapforce-libraries/go_errortools"
 )
 
-const timestampLayout string = "2006-01-02 15:04:05"
-
 type Map struct {
 	objectHandle *storage.ObjectHandle
-	context      context.Context
+	service      *Service
 	data         map[string]string
 }
 
@@ -43,7 +40,7 @@ func (service *Service) NewMap(objectName string) (*Map, *errortools.Error) {
 
 	return &Map{
 		objectHandle: objAppMem,
-		context:      service.context,
+		service:      service,
 		data:         data,
 	}, nil
 }
@@ -72,7 +69,7 @@ func (m *Map) GetTimestamp(key string) (*time.Time, *errortools.Error) {
 		return nil, nil
 	}
 
-	t, err := time.Parse(timestampLayout, *value)
+	t, err := time.Parse(m.service.timestampLayout, *value)
 	if err != nil {
 		return nil, errortools.ErrorMessage(err)
 	}
@@ -87,7 +84,7 @@ func (m *Map) Set(key string, value string) *errortools.Error {
 
 	m.data[key] = value
 
-	w := m.objectHandle.NewWriter(m.context)
+	w := m.objectHandle.NewWriter(m.service.context)
 	b, err := json.Marshal(m.data)
 	if err != nil {
 		errortools.CaptureFatal(err)
@@ -107,5 +104,5 @@ func (m *Map) Set(key string, value string) *errortools.Error {
 }
 
 func (m *Map) SetTimestamp(key string, value time.Time) *errortools.Error {
-	return m.Set(key, value.Format(timestampLayout))
+	return m.Set(key, value.Format(m.service.timestampLayout))
 }
