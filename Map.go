@@ -77,13 +77,25 @@ func (m *Map) GetTimestamp(key string) (*time.Time, *errortools.Error) {
 	return &t, nil
 }
 
-func (m *Map) Set(key string, value string) *errortools.Error {
+func (m *Map) Set(key string, value string, save bool) *errortools.Error {
 	if m == nil {
 		return errortools.ErrorMessage("Map is a nil pointer")
 	}
 
 	m.data[key] = value
 
+	if save {
+		return m.Save()
+	}
+
+	return nil
+}
+
+func (m *Map) SetTimestamp(key string, value time.Time, save bool) *errortools.Error {
+	return m.Set(key, value.Format(m.service.timestampLayout), save)
+}
+
+func (m *Map) Save() *errortools.Error {
 	w := m.objectHandle.NewWriter(m.service.context)
 	b, err := json.Marshal(m.data)
 	if err != nil {
@@ -101,8 +113,4 @@ func (m *Map) Set(key string, value string) *errortools.Error {
 	}
 
 	return nil
-}
-
-func (m *Map) SetTimestamp(key string, value time.Time) *errortools.Error {
-	return m.Set(key, value.Format(m.service.timestampLayout))
 }
