@@ -15,6 +15,7 @@ type Map struct {
 	objectHandle *storage.ObjectHandle
 	service      *Service
 	data         map[string]string
+	dirty        bool
 }
 
 func (service *Service) NewMap(objectName string) (*Map, *errortools.Error) {
@@ -88,6 +89,8 @@ func (m *Map) Set(key string, value string, save bool) *errortools.Error {
 		return m.Save()
 	}
 
+	m.dirty = true
+
 	return nil
 }
 
@@ -96,6 +99,10 @@ func (m *Map) SetTimestamp(key string, value time.Time, save bool) *errortools.E
 }
 
 func (m *Map) Save() *errortools.Error {
+	if !m.dirty {
+		return nil
+	}
+
 	w := m.objectHandle.NewWriter(m.service.context)
 	b, err := json.Marshal(m.data)
 	if err != nil {
