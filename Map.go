@@ -84,12 +84,11 @@ func (m *Map) Set(key string, value string, save bool) *errortools.Error {
 	}
 
 	m.data[key] = value
+	m.dirty = true
 
 	if save {
 		return m.Save()
 	}
-
-	m.dirty = true
 
 	return nil
 }
