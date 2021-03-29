@@ -18,24 +18,27 @@ type Map struct {
 	dirty        bool
 }
 
-func (service *Service) NewMap(objectName string) (*Map, *errortools.Error) {
+func (service *Service) NewMap(objectName string, writeOnly bool) (*Map, *errortools.Error) {
 	data := make(map[string]string)
 
 	objAppMem := service.bucketHandle.Object(objectName)
-	reader, err := objAppMem.NewReader(service.context)
-	if err == storage.ErrObjectNotExist {
-		// file does not exist
-		fmt.Println("file does not exist")
-	} else if err != nil {
-		return nil, errortools.ErrorMessage(err)
-	} else {
-		b, err := ioutil.ReadAll(reader)
-		if err != nil {
+
+	if !writeOnly {
+		reader, err := objAppMem.NewReader(service.context)
+		if err == storage.ErrObjectNotExist {
+			// file does not exist
+			fmt.Println("file does not exist")
+		} else if err != nil {
 			return nil, errortools.ErrorMessage(err)
-		}
-		err = json.Unmarshal(b, &data)
-		if err != nil {
-			return nil, errortools.ErrorMessage(err)
+		} else {
+			b, err := ioutil.ReadAll(reader)
+			if err != nil {
+				return nil, errortools.ErrorMessage(err)
+			}
+			err = json.Unmarshal(b, &data)
+			if err != nil {
+				return nil, errortools.ErrorMessage(err)
+			}
 		}
 	}
 
