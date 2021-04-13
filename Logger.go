@@ -2,6 +2,7 @@ package googlecloudstorage
 
 import (
 	"encoding/json"
+	"fmt"
 	"reflect"
 
 	"cloud.google.com/go/storage"
@@ -11,9 +12,10 @@ import (
 )
 
 type Logger struct {
-	writer    *storage.Writer
-	service   *Service
-	modelType reflect.Type
+	writer       *storage.Writer
+	service      *Service
+	modelType    reflect.Type
+	ObjectHandle *storage.ObjectHandle
 }
 
 func (service *Service) NewLogger(objectName string, schema interface{}) (*Logger, *errortools.Error) {
@@ -31,10 +33,12 @@ func (service *Service) NewLogger(objectName string, schema interface{}) (*Logge
 		return nil, errortools.ErrorMessage("Schema must be a pointer to a struct")
 	}
 
+	objectHandle := service.bucketHandle.Object(objectName)
 	return &Logger{
-		writer:    service.bucketHandle.Object(objectName).NewWriter(service.context),
-		service:   service,
-		modelType: modelType,
+		writer:       objectHandle.NewWriter(service.context),
+		service:      service,
+		modelType:    modelType,
+		ObjectHandle: objectHandle,
 	}, nil
 }
 
@@ -54,6 +58,12 @@ func (logger *Logger) Write(data interface{}) *errortools.Error {
 
 	// Write data
 	if _, err := logger.writer.Write(b); err != nil {
+		return errortools.ErrorMessage(err)
+	}
+
+	// Write NewLine
+	_, err = fmt.Fprintf(logger.writer, "\n")
+	if err != nil {
 		return errortools.ErrorMessage(err)
 	}
 
