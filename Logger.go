@@ -8,14 +8,15 @@ import (
 	"cloud.google.com/go/storage"
 
 	errortools "github.com/leapforce-libraries/go_errortools"
+	go_bigquery "github.com/leapforce-libraries/go_google/bigquery"
 	utilities "github.com/leapforce-libraries/go_utilities"
 )
 
 type Logger struct {
+	objectHandle *storage.ObjectHandle
 	writer       *storage.Writer
 	service      *Service
 	modelType    reflect.Type
-	ObjectHandle *storage.ObjectHandle
 }
 
 func (service *Service) NewLogger(objectName string, schema interface{}) (*Logger, *errortools.Error) {
@@ -35,10 +36,10 @@ func (service *Service) NewLogger(objectName string, schema interface{}) (*Logge
 
 	objectHandle := service.bucketHandle.Object(objectName)
 	return &Logger{
+		objectHandle: objectHandle,
 		writer:       objectHandle.NewWriter(service.context),
 		service:      service,
 		modelType:    modelType,
-		ObjectHandle: objectHandle,
 	}, nil
 }
 
@@ -77,4 +78,15 @@ func (logger *Logger) Close() *errortools.Error {
 	}
 
 	return nil
+}
+
+func (logger *Logger) ToBigQuery(bigQueryService *go_bigquery.Service, sqlConfig *go_bigquery.SQLConfig, truncateTable bool, deleteObject bool) *errortools.Error {
+	copyObjectToTableConfig := go_bigquery.CopyObjectToTableConfig{
+		ObjectHandle:  logger.objectHandle,
+		SQLConfig:     sqlConfig,
+		TruncateTable: truncateTable,
+		DeleteObject:  deleteObject,
+	}
+
+	return bigQueryService.CopyObjectToTable(&copyObjectToTableConfig)
 }
