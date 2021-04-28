@@ -2,8 +2,6 @@ package googlecloudstorage
 
 import (
 	"encoding/json"
-	"fmt"
-	"io/ioutil"
 	"time"
 
 	"cloud.google.com/go/storage"
@@ -21,25 +19,30 @@ type Map struct {
 func (service *Service) NewMap(objectName string, writeOnly bool) (*Map, *errortools.Error) {
 	data := make(map[string]string)
 
-	objAppMem := service.bucketHandle.Object(objectName)
+	objAppMem := service.bucket.Handle.Object(objectName)
 
 	if !writeOnly {
-		reader, err := objAppMem.NewReader(service.context)
-		if err == storage.ErrObjectNotExist {
-			// file does not exist
-			fmt.Println("file does not exist")
-		} else if err != nil {
-			return nil, errortools.ErrorMessage(err)
-		} else {
-			b, err := ioutil.ReadAll(reader)
-			if err != nil {
-				return nil, errortools.ErrorMessage(err)
-			}
-			err = json.Unmarshal(b, &data)
-			if err != nil {
-				return nil, errortools.ErrorMessage(err)
-			}
+		e := service.readObject(objAppMem, service.context, &data)
+		if e != nil {
+			return nil, e
 		}
+		/*
+			reader, err := objAppMem.NewReader(service.context)
+			if err == storage.ErrObjectNotExist {
+				// file does not exist
+				fmt.Println("file does not exist")
+			} else if err != nil {
+				return nil, errortools.ErrorMessage(err)
+			} else {
+				b, err := ioutil.ReadAll(reader)
+				if err != nil {
+					return nil, errortools.ErrorMessage(err)
+				}
+				err = json.Unmarshal(b, &data)
+				if err != nil {
+					return nil, errortools.ErrorMessage(err)
+				}
+			}*/
 	}
 
 	return &Map{

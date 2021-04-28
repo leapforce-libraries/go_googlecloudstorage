@@ -34,7 +34,7 @@ func (service *Service) NewLogger(objectName string, schema interface{}) (*Logge
 		return nil, errortools.ErrorMessage("Schema must be a pointer to a struct")
 	}
 
-	objectHandle := service.bucketHandle.Object(objectName)
+	objectHandle := service.bucket.Handle.Object(objectName)
 	return &Logger{
 		objectHandle: objectHandle,
 		writer:       objectHandle.NewWriter(service.context),

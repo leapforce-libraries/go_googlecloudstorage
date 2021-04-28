@@ -3,6 +3,8 @@ package googlecloudstorage
 import (
 	"context"
 	"encoding/json"
+	"fmt"
+	"io/ioutil"
 
 	"cloud.google.com/go/storage"
 	errortools "github.com/leapforce-libraries/go_errortools"
@@ -13,14 +15,14 @@ import (
 const defaultTimestampLayout string = "2006-01-02 15:04:05"
 
 type ServiceConfig struct {
-	CredentialsJSON *go_credentials.CredentialsJSON
-	BucketName      string
-	TimestampLayout *string
+	CredentialsJSON   *go_credentials.CredentialsJSON
+	DefaultBucketName *string
+	TimestampLayout   *string
 }
 
 type Service struct {
 	credentialsJSON *go_credentials.CredentialsJSON
-	bucketHandle    *storage.BucketHandle
+	bucket          *Bucket
 	context         context.Context
 	timestampLayout string
 }
@@ -48,10 +50,41 @@ func NewService(serviceConfig *ServiceConfig) (*Service, *errortools.Error) {
 		timestampLayout = *serviceConfig.TimestampLayout
 	}
 
+	var bucket *Bucket = nil
+	if serviceConfig.DefaultBucketName != nil {
+		bucketHandle := clientStorage.Bucket(*serviceConfig.DefaultBucketName)
+		bucket = &Bucket{
+			*serviceConfig.DefaultBucketName,
+			nil,
+			bucketHandle,
+		}
+	}
+
 	return &Service{
 		credentialsJSON: serviceConfig.CredentialsJSON,
-		bucketHandle:    clientStorage.Bucket(serviceConfig.BucketName),
+		bucket:          bucket,
 		context:         ctx,
 		timestampLayout: timestampLayout,
 	}, nil
+}
+
+func (service *Service) readObject(objectHandle *storage.ObjectHandle, ctx context.Context, model interface{}) *errortools.Error {
+	reader, err := objectHandle.NewReader(ctx)
+	if err == storage.ErrObjectNotExist {
+		// file does not exist
+		fmt.Println("file does not exist")
+	} else if err != nil {
+		return errortools.ErrorMessage(err)
+	} else {
+		b, err := ioutil.ReadAll(reader)
+		if err != nil {
+			return errortools.ErrorMessage(err)
+		}
+		err = json.Unmarshal(b, model)
+		if err != nil {
+			return errortools.ErrorMessage(err)
+		}
+	}
+
+	return nil
 }
