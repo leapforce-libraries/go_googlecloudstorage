@@ -5,7 +5,7 @@ import (
 )
 
 type Bucket struct {
-	Name   string
-	Attrs  *storage.BucketAttrs
+	Name string
+	//Attrs  *storage.BucketAttrs
 	Handle *storage.BucketHandle
 }

@@ -21,7 +21,8 @@ type ServiceConfig struct {
 }
 
 type Service struct {
-	credentialsJSON *go_credentials.CredentialsJSON
+	//credentialsJSON *go_credentials.CredentialsJSON
+	storageClient   *storage.Client
 	bucket          *Bucket
 	context         context.Context
 	timestampLayout string
@@ -40,7 +41,7 @@ func NewService(serviceConfig *ServiceConfig) (*Service, *errortools.Error) {
 	ctx := context.Background()
 
 	// init Google Cloud Storage client
-	clientStorage, err := storage.NewClient(ctx, option.WithCredentialsJSON(credentialsByte))
+	storageClient, err := storage.NewClient(ctx, option.WithCredentialsJSON(credentialsByte))
 	if err != nil {
 		return nil, errortools.ErrorMessage(err)
 	}
@@ -50,22 +51,26 @@ func NewService(serviceConfig *ServiceConfig) (*Service, *errortools.Error) {
 		timestampLayout = *serviceConfig.TimestampLayout
 	}
 
-	var bucket *Bucket = nil
-	if serviceConfig.DefaultBucketName != nil {
-		bucketHandle := clientStorage.Bucket(*serviceConfig.DefaultBucketName)
-		bucket = &Bucket{
-			*serviceConfig.DefaultBucketName,
-			nil,
-			bucketHandle,
-		}
-	}
-
-	return &Service{
-		credentialsJSON: serviceConfig.CredentialsJSON,
-		bucket:          bucket,
+	service := Service{
+		storageClient:   storageClient,
+		bucket:          nil,
 		context:         ctx,
 		timestampLayout: timestampLayout,
-	}, nil
+	}
+
+	if serviceConfig.DefaultBucketName != nil {
+		service.bucket = service.Bucket(*serviceConfig.DefaultBucketName)
+	}
+
+	return &service, nil
+}
+
+func (service *Service) Bucket(bucketName string) *Bucket {
+	bucketHandle := service.storageClient.Bucket(bucketName)
+	return &Bucket{
+		bucketName,
+		bucketHandle,
+	}
 }
 
 func (service *Service) readObject(objectHandle *storage.ObjectHandle, ctx context.Context, model interface{}) *errortools.Error {

@@ -1,20 +1,20 @@
 package googlecloudstorage
 
 import (
-	"encoding/json"
 	"fmt"
+	"strings"
 
 	"cloud.google.com/go/storage"
 	errortools "github.com/leapforce-libraries/go_errortools"
 	"google.golang.org/api/iterator"
-	"google.golang.org/api/option"
 )
 
 type Object struct {
-	service *Service
-	Name    string
-	Attrs   *storage.ObjectAttrs
-	Handle  *storage.ObjectHandle
+	service    *Service
+	bucketName string
+	Name       string
+	Attrs      *storage.ObjectAttrs
+	Handle     *storage.ObjectHandle
 }
 
 func (service *Service) Objects() (*[]*Object, *errortools.Error) {
@@ -32,6 +32,7 @@ func (service *Service) Objects() (*[]*Object, *errortools.Error) {
 
 		objects = append(objects, &Object{
 			service,
+			service.bucket.Name,
 			objectAttrs.Name,
 			objectAttrs,
 			service.bucket.Handle.Object(objectAttrs.Name),
@@ -45,19 +46,27 @@ func (object *Object) Read(model interface{}) *errortools.Error {
 	return object.service.readObject(object.Handle, object.service.context, model)
 }
 
-func (object *Object) CopyToFolder(folderName string) *errortools.Error {
-	bucketName := fmt.Sprintf("%s/%s", object.service.bucket.Attrs.Name, folderName)
+func (object *Object) IsFolder() bool {
+	return strings.HasSuffix(object.Name, "/")
+}
 
-	credentialsByte, err := json.Marshal(object.service.credentialsJSON)
+func (object *Object) InSubFolder() bool {
+	return strings.Contains(object.Name, "/")
+}
+
+func (object *Object) Delete() *errortools.Error {
+	err := object.Handle.Delete(object.service.context)
 	if err != nil {
 		return errortools.ErrorMessage(err)
 	}
 
-	clientStorage, err := storage.NewClient(object.service.context, option.WithCredentialsJSON(credentialsByte))
-	if err != nil {
-		return errortools.ErrorMessage(err)
-	}
-	_, err = clientStorage.Bucket(bucketName).Object(object.Attrs.Name).CopierFrom(object.Handle).Run(object.service.context)
+	return nil
+}
+
+func (object *Object) CopyToSubFolder(folderName string) *errortools.Error {
+	objectName := fmt.Sprintf("%s/%s", folderName, object.Name)
+
+	_, err := object.service.bucket.Handle.Object(objectName).CopierFrom(object.Handle).Run(object.service.context)
 	if err != nil {
 		return errortools.ErrorMessage(err)
 	}
