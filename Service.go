@@ -3,7 +3,6 @@ package googlecloudstorage
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"io/ioutil"
 
 	"cloud.google.com/go/storage"
@@ -73,22 +72,32 @@ func (service *Service) Bucket(bucketName string) *Bucket {
 	}
 }
 
-func (service *Service) readObject(objectHandle *storage.ObjectHandle, ctx context.Context, model interface{}) *errortools.Error {
+func (service *Service) read(objectHandle *storage.ObjectHandle, ctx context.Context) (*[]byte, *errortools.Error) {
 	reader, err := objectHandle.NewReader(ctx)
 	if err == storage.ErrObjectNotExist {
-		// file does not exist
-		fmt.Println("file does not exist")
-	} else if err != nil {
+		//fmt.Println("file does not exist")
+		return nil, errortools.ErrorMessage("File does not exist")
+	}
+	if err != nil {
+		return nil, errortools.ErrorMessage(err)
+	}
+	b, err := ioutil.ReadAll(reader)
+	if err != nil {
+		return nil, errortools.ErrorMessage(err)
+	}
+
+	return &b, nil
+}
+
+func (service *Service) readObject(objectHandle *storage.ObjectHandle, ctx context.Context, model interface{}) *errortools.Error {
+	b, e := service.read(objectHandle, ctx)
+	if e != nil {
+		return e
+	}
+
+	err := json.Unmarshal(*b, model)
+	if err != nil {
 		return errortools.ErrorMessage(err)
-	} else {
-		b, err := ioutil.ReadAll(reader)
-		if err != nil {
-			return errortools.ErrorMessage(err)
-		}
-		err = json.Unmarshal(b, model)
-		if err != nil {
-			return errortools.ErrorMessage(err)
-		}
 	}
 
 	return nil
