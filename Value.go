@@ -2,6 +2,8 @@ package googlecloudstorage
 
 import (
 	"encoding/json"
+	"fmt"
+	"strings"
 
 	"cloud.google.com/go/storage"
 
@@ -72,6 +74,29 @@ func (v *Value) SetString(s string, save bool) *errortools.Error {
 	}
 
 	return nil
+}
+
+func (v *Value) AddString(s string, separator string, distinct bool, save bool) *errortools.Error {
+	if v == nil {
+		return errortools.ErrorMessage("Value is a nil pointer")
+	}
+
+	st, e := v.GetString()
+	if e != nil {
+		return e
+	}
+	if st == nil {
+		return nil
+	}
+
+	if distinct { // store only distinct strings
+		if strings.Contains(fmt.Sprintf("%s%s%s", separator, *st, separator), fmt.Sprintf("%s%s%s", separator, s, separator)) {
+			return nil
+		}
+	}
+	_st := strings.Split(*st, separator)
+	_st = append(_st, s)
+	return v.SetString(strings.Join(_st, separator), save)
 }
 
 func (v *Value) SetStruct(value interface{}, save bool) *errortools.Error {
