@@ -2,6 +2,7 @@ package googlecloudstorage
 
 import (
 	"encoding/json"
+	"fmt"
 	"time"
 
 	"cloud.google.com/go/storage"
@@ -16,47 +17,29 @@ type Map struct {
 	dirty        bool
 }
 
-func (service *Service) NewMap(objectName string, writeOnly bool) (*Map, *errortools.Error) {
+func (service *Service) NewMap(objectName string, writeOnly bool) (*Map, bool, *errortools.Error) {
 	data := make(map[string]string)
 
-	objAppMem := service.bucket.Handle.Object(objectName)
+	objectHandle := service.bucket.Handle.Object(objectName)
 
 	if !writeOnly {
-		e := service.readObject(objAppMem, service.context, &data)
+		exists, e := service.readObject(objectHandle, service.context, &data)
 		if e != nil {
-			return nil, e
+			return nil, exists, e
 		}
-		/*
-			reader, err := objAppMem.NewReader(service.context)
-			if err == storage.ErrObjectNotExist {
-				// file does not exist
-				fmt.Println("file does not exist")
-			} else if err != nil {
-				return nil, errortools.ErrorMessage(err)
-			} else {
-				b, err := ioutil.ReadAll(reader)
-				if err != nil {
-					return nil, errortools.ErrorMessage(err)
-				}
-				err = json.Unmarshal(b, &data)
-				if err != nil {
-					return nil, errortools.ErrorMessage(err)
-				}
-			}*/
+		if !exists {
+			return nil, exists, nil
+		}
 	}
 
 	return &Map{
-		objectHandle: objAppMem,
+		objectHandle: objectHandle,
 		service:      service,
 		data:         data,
-	}, nil
+	}, true, nil
 }
 
-func (m *Map) Get(key string) (*string, *errortools.Error) {
-	if m == nil {
-		return nil, errortools.ErrorMessage("Map is a nil pointer")
-	}
-
+func (m Map) Get(key string) (*string, *errortools.Error) {
 	value, ok := m.data[key]
 
 	if !ok {
@@ -66,7 +49,7 @@ func (m *Map) Get(key string) (*string, *errortools.Error) {
 	return &value, nil
 }
 
-func (m *Map) GetTimestamp(key string) (*time.Time, *errortools.Error) {
+func (m Map) GetTimestamp(key string) (*time.Time, *errortools.Error) {
 	value, e := m.Get(key)
 	if e != nil {
 		return nil, e
@@ -84,23 +67,21 @@ func (m *Map) GetTimestamp(key string) (*time.Time, *errortools.Error) {
 	return &t, nil
 }
 
-func (m *Map) Set(key string, value string, save bool) *errortools.Error {
+func (m *Map) Set(key string, value string, save bool) {
 	if m == nil {
-		return errortools.ErrorMessage("Map is a nil pointer")
+		return
 	}
 
 	m.data[key] = value
 	m.dirty = true
 
 	if save {
-		return m.Save()
+		m.Save()
 	}
-
-	return nil
 }
 
-func (m *Map) SetTimestamp(key string, value time.Time, save bool) *errortools.Error {
-	return m.Set(key, value.Format(m.service.timestampLayout), save)
+func (m *Map) SetTimestamp(key string, value time.Time, save bool) {
+	m.Set(key, value.Format(m.service.timestampLayout), save)
 }
 
 func (m *Map) Save() *errortools.Error {
@@ -114,6 +95,8 @@ func (m *Map) Save() *errortools.Error {
 		errortools.CaptureFatal(err)
 	}
 
+	fmt.Println(string(b))
+
 	// Write data
 	if _, err := w.Write(b); err != nil {
 		return errortools.ErrorMessage(err)
@@ -123,6 +106,8 @@ func (m *Map) Save() *errortools.Error {
 	if err := w.Close(); err != nil {
 		return errortools.ErrorMessage(err)
 	}
+
+	m.dirty = false
 
 	return nil
 }

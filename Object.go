@@ -42,7 +42,7 @@ func (service *Service) Objects() (*[]*Object, *errortools.Error) {
 	return &objects, nil
 }
 
-func (object *Object) Read(model interface{}) *errortools.Error {
+func (object *Object) Read(model interface{}) (bool, *errortools.Error) {
 	return object.service.readObject(object.Handle, object.service.context, model)
 }
 

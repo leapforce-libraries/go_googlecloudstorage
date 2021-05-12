@@ -17,40 +17,43 @@ type Value struct {
 	dirty        bool
 }
 
-func (service *Service) NewValue(objectName string, writeOnly bool) (*Value, *errortools.Error) {
+func (service *Service) NewValue(objectName string, writeOnly bool) (*Value, bool, *errortools.Error) {
 	var bytes []byte
 
-	objAppMem := service.bucket.Handle.Object(objectName)
+	objectHandle := service.bucket.Handle.Object(objectName)
 
 	if !writeOnly {
-		b, e := service.read(objAppMem, service.context)
+		b, exists, e := service.read(objectHandle, service.context)
 		if e != nil {
-			return nil, e
+			return nil, exists, e
+		}
+		if !exists {
+			return nil, exists, nil
 		}
 
 		bytes = *b
 	}
 
 	return &Value{
-		objectHandle: objAppMem,
+		objectHandle: objectHandle,
 		service:      service,
 		bytes:        bytes,
-	}, nil
+	}, true, nil
 }
 
-func (v *Value) GetString() (*string, *errortools.Error) {
-	if v == nil {
-		return nil, errortools.ErrorMessage("Value is a nil pointer")
+func (v Value) GetString() *string {
+	if len(v.bytes) == 0 {
+		return nil
 	}
 
 	s := string(v.bytes)
 
-	return &s, nil
+	return &s
 }
 
-func (v *Value) GetStruct(model interface{}) *errortools.Error {
-	if v == nil {
-		return errortools.ErrorMessage("Value is a nil pointer")
+func (v Value) GetStruct(model interface{}) *errortools.Error {
+	if len(v.bytes) == 0 {
+		return nil
 	}
 
 	err := json.Unmarshal(v.bytes, model)
@@ -61,47 +64,43 @@ func (v *Value) GetStruct(model interface{}) *errortools.Error {
 	return nil
 }
 
-func (v *Value) SetString(s string, save bool) *errortools.Error {
+func (v *Value) SetString(s string, save bool) {
 	if v == nil {
-		return errortools.ErrorMessage("Value is a nil pointer")
+		return
 	}
 
 	v.bytes = []byte(s)
 	v.dirty = true
 
 	if save {
-		return v.Save()
+		v.Save()
 	}
-
-	return nil
 }
 
-func (v *Value) AddString(s string, separator string, distinct bool, save bool) *errortools.Error {
+func (v *Value) AddString(s string, separator string, distinct bool, save bool) {
 	if v == nil {
-		return errortools.ErrorMessage("Value is a nil pointer")
+		return
 	}
 
-	st, e := v.GetString()
-	if e != nil {
-		return e
-	}
+	st := v.GetString()
 	if st == nil {
-		return nil
+		return
 	}
 
 	if distinct { // store only distinct strings
 		if strings.Contains(fmt.Sprintf("%s%s%s", separator, *st, separator), fmt.Sprintf("%s%s%s", separator, s, separator)) {
-			return nil
+			return
 		}
 	}
 	_st := strings.Split(*st, separator)
 	_st = append(_st, s)
-	return v.SetString(strings.Join(_st, separator), save)
+
+	v.SetString(strings.Join(_st, separator), save)
 }
 
 func (v *Value) SetStruct(value interface{}, save bool) *errortools.Error {
 	if v == nil {
-		return errortools.ErrorMessage("Value is a nil pointer")
+		return nil
 	}
 
 	b, err := json.Marshal(value)
@@ -139,6 +138,8 @@ func (v *Value) Save() *errortools.Error {
 	if err := w.Close(); err != nil {
 		return errortools.ErrorMessage(err)
 	}
+
+	v.dirty = false
 
 	return nil
 }
