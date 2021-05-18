@@ -79,25 +79,25 @@ func (v *Value) SetString(s string, save bool) *errortools.Error {
 	return nil
 }
 
-func (v *Value) AddString(s string, separator string, distinct bool, save bool) {
+func (v *Value) AddString(s string, separator string, distinct bool, save bool) *errortools.Error {
 	if v == nil {
-		return
+		return nil
 	}
 
 	st := v.GetString()
 	if st == nil {
-		return
+		return nil
 	}
 
 	if distinct { // store only distinct strings
 		if strings.Contains(fmt.Sprintf("%s%s%s", separator, *st, separator), fmt.Sprintf("%s%s%s", separator, s, separator)) {
-			return
+			return nil
 		}
 	}
 	_st := strings.Split(*st, separator)
 	_st = append(_st, s)
 
-	v.SetString(strings.Join(_st, separator), save)
+	return v.SetString(strings.Join(_st, separator), save)
 }
 
 func (v *Value) SetStruct(value interface{}, save bool) *errortools.Error {
