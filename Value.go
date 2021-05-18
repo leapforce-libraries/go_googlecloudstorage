@@ -64,17 +64,19 @@ func (v Value) GetStruct(model interface{}) *errortools.Error {
 	return nil
 }
 
-func (v *Value) SetString(s string, save bool) {
+func (v *Value) SetString(s string, save bool) *errortools.Error {
 	if v == nil {
-		return
+		return nil
 	}
 
 	v.bytes = []byte(s)
 	v.dirty = true
 
 	if save {
-		v.Save()
+		return v.Save()
 	}
+
+	return nil
 }
 
 func (v *Value) AddString(s string, separator string, distinct bool, save bool) {

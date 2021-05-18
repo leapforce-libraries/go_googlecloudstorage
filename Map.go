@@ -67,21 +67,23 @@ func (m Map) GetTimestamp(key string) (*time.Time, *errortools.Error) {
 	return &t, nil
 }
 
-func (m *Map) Set(key string, value string, save bool) {
+func (m *Map) Set(key string, value string, save bool) *errortools.Error {
 	if m == nil {
-		return
+		return nil
 	}
 
 	m.data[key] = value
 	m.dirty = true
 
 	if save {
-		m.Save()
+		return m.Save()
 	}
+
+	return nil
 }
 
-func (m *Map) SetTimestamp(key string, value time.Time, save bool) {
-	m.Set(key, value.Format(m.service.timestampLayout), save)
+func (m *Map) SetTimestamp(key string, value time.Time, save bool) *errortools.Error {
+	return m.Set(key, value.Format(m.service.timestampLayout), save)
 }
 
 func (m *Map) Save() *errortools.Error {
