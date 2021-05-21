@@ -34,7 +34,9 @@ func (service *Service) NewValue(objectName string, writeOnly bool) (*Value, boo
 		return nil, exists, e
 	}
 
-	value.bytes = *b
+	if exists {
+		value.bytes = *b
+	}
 
 	return &value, exists, nil
 }

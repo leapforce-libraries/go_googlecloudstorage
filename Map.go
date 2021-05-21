@@ -34,7 +34,9 @@ func (service *Service) NewMap(objectName string, writeOnly bool) (*Map, bool, *
 		return nil, exists, e
 	}
 
-	m.data = data
+	if exists {
+		m.data = data
+	}
 
 	return &m, exists, nil
 }
