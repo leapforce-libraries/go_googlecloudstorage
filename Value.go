@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"strings"
+	"time"
 
 	"cloud.google.com/go/storage"
 
@@ -51,6 +52,21 @@ func (v Value) GetString() *string {
 	return &s
 }
 
+func (v Value) GetTimestamp() (*time.Time, *errortools.Error) {
+	s := v.GetString()
+
+	if s == nil {
+		return nil, nil
+	}
+
+	t, err := time.Parse(v.service.timestampLayout, *s)
+	if err != nil {
+		return nil, errortools.ErrorMessage(err)
+	}
+
+	return &t, nil
+}
+
 func (v Value) GetStruct(model interface{}) *errortools.Error {
 	if len(v.bytes) == 0 {
 		return nil
@@ -77,6 +93,10 @@ func (v *Value) SetString(s string, save bool) *errortools.Error {
 	}
 
 	return nil
+}
+
+func (v *Value) SetTimestamp(t time.Time, save bool) *errortools.Error {
+	return v.SetString(t.Format(v.service.timestampLayout), save)
 }
 
 func (v *Value) AddString(s string, separator string, distinct bool, save bool) *errortools.Error {

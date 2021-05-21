@@ -2,7 +2,6 @@ package googlecloudstorage
 
 import (
 	"encoding/json"
-	"fmt"
 	"time"
 
 	"cloud.google.com/go/storage"
@@ -96,8 +95,6 @@ func (m *Map) Save() *errortools.Error {
 	if err != nil {
 		errortools.CaptureFatal(err)
 	}
-
-	fmt.Println(string(b))
 
 	// Write data
 	if _, err := w.Write(b); err != nil {
