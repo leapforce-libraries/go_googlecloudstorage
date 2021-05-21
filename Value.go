@@ -19,27 +19,24 @@ type Value struct {
 }
 
 func (service *Service) NewValue(objectName string, writeOnly bool) (*Value, bool, *errortools.Error) {
-	var bytes []byte
-
-	objectHandle := service.bucket.Handle.Object(objectName)
-
-	if !writeOnly {
-		b, exists, e := service.read(objectHandle, service.context)
-		if e != nil {
-			return nil, exists, e
-		}
-		if !exists {
-			return nil, exists, nil
-		}
-
-		bytes = *b
+	value := Value{
+		objectHandle: service.bucket.Handle.Object(objectName),
+		service:      service,
+		bytes:        []byte{},
 	}
 
-	return &Value{
-		objectHandle: objectHandle,
-		service:      service,
-		bytes:        bytes,
-	}, true, nil
+	if writeOnly {
+		return &value, true, nil
+	}
+
+	b, exists, e := service.read(value.objectHandle, service.context)
+	if e != nil {
+		return nil, exists, e
+	}
+
+	value.bytes = *b
+
+	return &value, exists, nil
 }
 
 func (v Value) GetString() *string {

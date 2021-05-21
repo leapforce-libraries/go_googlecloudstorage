@@ -19,23 +19,24 @@ type Map struct {
 func (service *Service) NewMap(objectName string, writeOnly bool) (*Map, bool, *errortools.Error) {
 	data := make(map[string]string)
 
-	objectHandle := service.bucket.Handle.Object(objectName)
-
-	if !writeOnly {
-		exists, e := service.readObject(objectHandle, service.context, &data)
-		if e != nil {
-			return nil, exists, e
-		}
-		if !exists {
-			return nil, exists, nil
-		}
-	}
-
-	return &Map{
-		objectHandle: objectHandle,
+	m := Map{
+		objectHandle: service.bucket.Handle.Object(objectName),
 		service:      service,
 		data:         data,
-	}, true, nil
+	}
+
+	if writeOnly {
+		return &m, true, nil
+	}
+
+	exists, e := service.readObject(m.objectHandle, service.context, &data)
+	if e != nil {
+		return nil, exists, e
+	}
+
+	m.data = data
+
+	return &m, exists, nil
 }
 
 func (m Map) Get(key string) (*string, *errortools.Error) {
