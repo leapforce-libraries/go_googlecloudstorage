@@ -4,10 +4,12 @@ import (
 	"encoding/json"
 	"time"
 
+	"cloud.google.com/go/civil"
 	"cloud.google.com/go/storage"
-
 	errortools "github.com/leapforce-libraries/go_errortools"
 )
+
+const dateLayout string = "2006-01-02"
 
 type Map struct {
 	objectHandle *storage.ObjectHandle
@@ -69,6 +71,25 @@ func (m Map) GetTimestamp(key string) (*time.Time, *errortools.Error) {
 	return &t, nil
 }
 
+func (m Map) GetDate(key string) (*civil.Date, *errortools.Error) {
+	value, e := m.Get(key)
+	if e != nil {
+		return nil, e
+	}
+
+	if value == nil {
+		return nil, nil
+	}
+
+	t, err := time.Parse(dateLayout, *value)
+	if err != nil {
+		return nil, errortools.ErrorMessage(err)
+	}
+
+	d := civil.DateOf(t)
+	return &d, nil
+}
+
 func (m *Map) Set(key string, value string, save bool) *errortools.Error {
 	if m == nil {
 		return nil
@@ -86,6 +107,10 @@ func (m *Map) Set(key string, value string, save bool) *errortools.Error {
 
 func (m *Map) SetTimestamp(key string, value time.Time, save bool) *errortools.Error {
 	return m.Set(key, value.Format(m.service.timestampLayout), save)
+}
+
+func (m *Map) SetDate(key string, value civil.Date, save bool) *errortools.Error {
+	return m.Set(key, value.String(), save)
 }
 
 func (m *Map) Save() *errortools.Error {
