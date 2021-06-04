@@ -2,6 +2,8 @@ package googlecloudstorage
 
 import (
 	"encoding/json"
+	"fmt"
+	"strconv"
 	"time"
 
 	"cloud.google.com/go/civil"
@@ -51,6 +53,24 @@ func (m Map) Get(key string) (*string, *errortools.Error) {
 	}
 
 	return &value, nil
+}
+
+func (m Map) GetInt64(key string) (*int64, *errortools.Error) {
+	value, e := m.Get(key)
+	if e != nil {
+		return nil, e
+	}
+
+	if value == nil {
+		return nil, nil
+	}
+
+	i, err := strconv.ParseInt(*value, 10, 64)
+	if err != nil {
+		return nil, errortools.ErrorMessage(err)
+	}
+
+	return &i, nil
 }
 
 func (m Map) GetTimestamp(key string) (*time.Time, *errortools.Error) {
@@ -103,6 +123,10 @@ func (m *Map) Set(key string, value string, save bool) *errortools.Error {
 	}
 
 	return nil
+}
+
+func (m *Map) SetInt64(key string, i int64, save bool) *errortools.Error {
+	return m.Set(key, fmt.Sprintf("%v", i), save)
 }
 
 func (m *Map) SetTimestamp(key string, value time.Time, save bool) *errortools.Error {

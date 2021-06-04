@@ -3,6 +3,7 @@ package googlecloudstorage
 import (
 	"encoding/json"
 	"fmt"
+	"strconv"
 	"strings"
 	"time"
 
@@ -51,6 +52,21 @@ func (v Value) GetString() *string {
 	return &s
 }
 
+func (v Value) GetInt64() (*int64, *errortools.Error) {
+	s := v.GetString()
+
+	if s == nil {
+		return nil, nil
+	}
+
+	i, err := strconv.ParseInt(*s, 10, 64)
+	if err != nil {
+		return nil, errortools.ErrorMessage(err)
+	}
+
+	return &i, nil
+}
+
 func (v Value) GetTimestamp() (*time.Time, *errortools.Error) {
 	s := v.GetString()
 
@@ -92,6 +108,10 @@ func (v *Value) SetString(s string, save bool) *errortools.Error {
 	}
 
 	return nil
+}
+
+func (v *Value) SetInt64(i int64, save bool) *errortools.Error {
+	return v.SetString(fmt.Sprintf("%v", i), save)
 }
 
 func (v *Value) SetTimestamp(t time.Time, save bool) *errortools.Error {
