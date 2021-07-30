@@ -45,6 +45,18 @@ func (service *Service) NewMap(objectName string, writeOnly bool) (*Map, bool, *
 	return &m, exists, nil
 }
 
+func (m Map) Keys() []string {
+	keys := []string{}
+
+	if m.data != nil {
+		for key := range m.data {
+			keys = append(keys, key)
+		}
+	}
+
+	return keys
+}
+
 func (m Map) Get(key string) (*string, *errortools.Error) {
 	value, ok := m.data[key]
 
