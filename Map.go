@@ -137,6 +137,18 @@ func (m *Map) SetDate(key string, value civil.Date, save bool) *errortools.Error
 	return m.Set(key, value.String(), save)
 }
 
+func (m *Map) Delete(key string) {
+	if m == nil {
+		return
+	}
+
+	if m.data == nil {
+		return
+	}
+
+	delete(m.data, key)
+}
+
 func (m *Map) Save() *errortools.Error {
 	if !m.dirty {
 		return nil
