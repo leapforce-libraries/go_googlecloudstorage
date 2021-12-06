@@ -73,3 +73,17 @@ func (object *Object) CopyToSubFolder(folderName string) *errortools.Error {
 
 	return nil
 }
+
+func (object *Object) MoveToSubFolder(folderName string) *errortools.Error {
+	e := object.CopyToSubFolder(folderName)
+	if e != nil {
+		return e
+	}
+
+	e = object.Delete()
+	if e != nil {
+		return e
+	}
+
+	return nil
+}
