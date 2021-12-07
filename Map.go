@@ -2,6 +2,7 @@ package googlecloudstorage
 
 import (
 	"encoding/json"
+	"sync"
 	"time"
 
 	"cloud.google.com/go/civil"
@@ -12,6 +13,7 @@ import (
 const dateLayout string = "2006-01-02"
 
 type Map struct {
+	sync.RWMutex
 	objectHandle *storage.ObjectHandle
 	service      *Service
 	data         map[string]json.RawMessage
@@ -19,31 +21,50 @@ type Map struct {
 }
 
 func (service *Service) NewMap(objectName string, writeOnly bool) (*Map, bool, *errortools.Error) {
-	data := make(map[string]json.RawMessage)
-
 	m := Map{
 		objectHandle: service.bucket.Handle.Object(objectName),
 		service:      service,
-		data:         data,
 	}
 
 	if writeOnly {
 		return &m, true, nil
 	}
 
-	exists, e := service.readObject(m.objectHandle, service.context, &data)
+	exists, e := readMap(&m)
 	if e != nil {
 		return nil, exists, e
+	}
+
+	return &m, exists, nil
+}
+
+func (service *Service) RefreshMap(m *Map) *errortools.Error {
+	_, e := readMap(m)
+	return e
+}
+
+func readMap(m *Map) (bool, *errortools.Error) {
+	m.Lock()
+	defer m.Unlock()
+
+	data := make(map[string]json.RawMessage)
+
+	exists, e := m.service.readObject(m.objectHandle, m.service.context, &data)
+	if e != nil {
+		return false, e
 	}
 
 	if exists {
 		m.data = data
 	}
 
-	return &m, exists, nil
+	return exists, nil
 }
 
-func (m Map) Keys() []string {
+func (m *Map) Keys() []string {
+	m.Lock()
+	defer m.Unlock()
+
 	keys := []string{}
 
 	if m.data != nil {
@@ -55,7 +76,10 @@ func (m Map) Keys() []string {
 	return keys
 }
 
-func (m Map) Get(key string) (*string, *errortools.Error) {
+func (m *Map) Get(key string) (*string, *errortools.Error) {
+	m.Lock()
+	defer m.Unlock()
+
 	value, ok := m.data[key]
 	if !ok {
 		return nil, nil
@@ -70,7 +94,10 @@ func (m Map) Get(key string) (*string, *errortools.Error) {
 	return &s, nil
 }
 
-func (m Map) GetInt64(key string) (*int64, *errortools.Error) {
+func (m *Map) GetInt64(key string) (*int64, *errortools.Error) {
+	m.Lock()
+	defer m.Unlock()
+
 	value, ok := m.data[key]
 	if !ok {
 		return nil, nil
@@ -85,8 +112,8 @@ func (m Map) GetInt64(key string) (*int64, *errortools.Error) {
 	return &i, nil
 }
 
-func (m Map) GetTimestamp(key string) (*time.Time, *errortools.Error) {
-	s, e := m.Get(key)
+func (m *Map) GetTimestamp(key string) (*time.Time, *errortools.Error) {
+	s, e := m.Get(key) // locking is here
 	if e != nil {
 		return nil, e
 	}
@@ -103,8 +130,8 @@ func (m Map) GetTimestamp(key string) (*time.Time, *errortools.Error) {
 	return &t, nil
 }
 
-func (m Map) GetDate(key string) (*civil.Date, *errortools.Error) {
-	s, e := m.Get(key)
+func (m *Map) GetDate(key string) (*civil.Date, *errortools.Error) {
+	s, e := m.Get(key) // locking is here
 	if e != nil {
 		return nil, e
 	}
@@ -122,7 +149,10 @@ func (m Map) GetDate(key string) (*civil.Date, *errortools.Error) {
 	return &d, nil
 }
 
-func (m Map) GetObject(key string, model interface{}) (bool, *errortools.Error) {
+func (m *Map) GetObject(key string, model interface{}) (bool, *errortools.Error) {
+	m.Lock()
+	defer m.Unlock()
+
 	value, ok := m.data[key]
 	if !ok {
 		return false, nil
@@ -141,6 +171,9 @@ func (m *Map) set(key string, value interface{}, save bool) *errortools.Error {
 		return nil
 	}
 
+	m.Lock()
+	defer m.Unlock()
+
 	b, err := json.Marshal(value)
 	if err != nil {
 		return errortools.ErrorMessage(err)
@@ -150,7 +183,7 @@ func (m *Map) set(key string, value interface{}, save bool) *errortools.Error {
 	m.dirty = true
 
 	if save {
-		return m.Save()
+		return m.save()
 	}
 
 	return nil
@@ -185,10 +218,20 @@ func (m *Map) Delete(key string) {
 		return
 	}
 
+	m.Lock()
+	defer m.Unlock()
+
 	delete(m.data, key)
 }
 
 func (m *Map) Save() *errortools.Error {
+	m.Lock()
+	defer m.Unlock()
+
+	return m.save()
+}
+
+func (m *Map) save() *errortools.Error {
 	if !m.dirty {
 		return nil
 	}
