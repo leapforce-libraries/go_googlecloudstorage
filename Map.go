@@ -2,8 +2,6 @@ package googlecloudstorage
 
 import (
 	"encoding/json"
-	"fmt"
-	"strconv"
 	"time"
 
 	"cloud.google.com/go/civil"
@@ -16,12 +14,12 @@ const dateLayout string = "2006-01-02"
 type Map struct {
 	objectHandle *storage.ObjectHandle
 	service      *Service
-	data         map[string]string
+	data         map[string]json.RawMessage
 	dirty        bool
 }
 
 func (service *Service) NewMap(objectName string, writeOnly bool) (*Map, bool, *errortools.Error) {
-	data := make(map[string]string)
+	data := make(map[string]json.RawMessage)
 
 	m := Map{
 		objectHandle: service.bucket.Handle.Object(objectName),
@@ -59,25 +57,27 @@ func (m Map) Keys() []string {
 
 func (m Map) Get(key string) (*string, *errortools.Error) {
 	value, ok := m.data[key]
-
 	if !ok {
 		return nil, nil
 	}
 
-	return &value, nil
+	s := ""
+	err := json.Unmarshal(value, &s)
+	if err != nil {
+		return nil, errortools.ErrorMessage(err)
+	}
+
+	return &s, nil
 }
 
 func (m Map) GetInt64(key string) (*int64, *errortools.Error) {
-	value, e := m.Get(key)
-	if e != nil {
-		return nil, e
-	}
-
-	if value == nil {
+	value, ok := m.data[key]
+	if !ok {
 		return nil, nil
 	}
 
-	i, err := strconv.ParseInt(*value, 10, 64)
+	i := int64(0)
+	err := json.Unmarshal(value, &i)
 	if err != nil {
 		return nil, errortools.ErrorMessage(err)
 	}
@@ -86,16 +86,16 @@ func (m Map) GetInt64(key string) (*int64, *errortools.Error) {
 }
 
 func (m Map) GetTimestamp(key string) (*time.Time, *errortools.Error) {
-	value, e := m.Get(key)
+	s, e := m.Get(key)
 	if e != nil {
 		return nil, e
 	}
 
-	if value == nil {
+	if s == nil {
 		return nil, nil
 	}
 
-	t, err := time.Parse(m.service.timestampLayout, *value)
+	t, err := time.Parse(m.service.timestampLayout, *s)
 	if err != nil {
 		return nil, errortools.ErrorMessage(err)
 	}
@@ -104,16 +104,16 @@ func (m Map) GetTimestamp(key string) (*time.Time, *errortools.Error) {
 }
 
 func (m Map) GetDate(key string) (*civil.Date, *errortools.Error) {
-	value, e := m.Get(key)
+	s, e := m.Get(key)
 	if e != nil {
 		return nil, e
 	}
 
-	if value == nil {
+	if s == nil {
 		return nil, nil
 	}
 
-	t, err := time.Parse(dateLayout, *value)
+	t, err := time.Parse(dateLayout, *s)
 	if err != nil {
 		return nil, errortools.ErrorMessage(err)
 	}
@@ -122,12 +122,31 @@ func (m Map) GetDate(key string) (*civil.Date, *errortools.Error) {
 	return &d, nil
 }
 
-func (m *Map) Set(key string, value string, save bool) *errortools.Error {
+func (m Map) GetObject(key string, model interface{}) (bool, *errortools.Error) {
+	value, ok := m.data[key]
+	if !ok {
+		return false, nil
+	}
+
+	err := json.Unmarshal(value, model)
+	if err != nil {
+		return false, errortools.ErrorMessage(err)
+	}
+
+	return true, nil
+}
+
+func (m *Map) set(key string, value interface{}, save bool) *errortools.Error {
 	if m == nil {
 		return nil
 	}
 
-	m.data[key] = value
+	b, err := json.Marshal(value)
+	if err != nil {
+		return errortools.ErrorMessage(err)
+	}
+
+	m.data[key] = b
 	m.dirty = true
 
 	if save {
@@ -137,16 +156,24 @@ func (m *Map) Set(key string, value string, save bool) *errortools.Error {
 	return nil
 }
 
+func (m *Map) Set(key string, s string, save bool) *errortools.Error {
+	return m.set(key, s, save)
+}
+
 func (m *Map) SetInt64(key string, i int64, save bool) *errortools.Error {
-	return m.Set(key, fmt.Sprintf("%v", i), save)
+	return m.set(key, i, save)
 }
 
 func (m *Map) SetTimestamp(key string, value time.Time, save bool) *errortools.Error {
-	return m.Set(key, value.Format(m.service.timestampLayout), save)
+	return m.set(key, value.Format(m.service.timestampLayout), save)
 }
 
 func (m *Map) SetDate(key string, value civil.Date, save bool) *errortools.Error {
-	return m.Set(key, value.String(), save)
+	return m.set(key, value.String(), save)
+}
+
+func (m *Map) SetObject(key string, object interface{}, save bool) *errortools.Error {
+	return m.set(key, object, save)
 }
 
 func (m *Map) Delete(key string) {
