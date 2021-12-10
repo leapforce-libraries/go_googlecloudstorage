@@ -46,6 +46,10 @@ func (object *Object) Read(model interface{}) (bool, *errortools.Error) {
 	return object.service.readObject(object.Handle, object.service.context, model)
 }
 
+func (object *Object) Bytes() (*[]byte, bool, *errortools.Error) {
+	return object.service.read(object.Handle, object.service.context)
+}
+
 func (object *Object) IsFolder() bool {
 	return strings.HasSuffix(object.Name, "/")
 }
