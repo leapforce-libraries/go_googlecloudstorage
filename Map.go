@@ -27,6 +27,7 @@ func (service *Service) NewMap(objectName string, writeOnly bool) (*Map, bool, *
 	}
 
 	if writeOnly {
+		m.data = make(map[string]json.RawMessage)
 		return &m, true, nil
 	}
 
