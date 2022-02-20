@@ -80,10 +80,10 @@ func (logger *Logger) Close() *errortools.Error {
 	return nil
 }
 
-func (logger *Logger) ToBigQuery(bigQueryService *go_bigquery.Service, sqlConfig *go_bigquery.SQLConfig, truncateTable bool, deleteObject bool) *errortools.Error {
+func (logger *Logger) ToBigQuery(bigQueryService *go_bigquery.Service, sqlConfig *go_bigquery.SqlConfig, truncateTable bool, deleteObject bool) *errortools.Error {
 	copyObjectToTableConfig := go_bigquery.CopyObjectToTableConfig{
 		ObjectHandle:  logger.objectHandle,
-		SQLConfig:     sqlConfig,
+		SqlConfig:     sqlConfig,
 		TruncateTable: truncateTable,
 		DeleteObject:  deleteObject,
 	}

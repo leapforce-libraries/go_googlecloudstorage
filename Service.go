@@ -14,13 +14,12 @@ import (
 const defaultTimestampLayout string = "2006-01-02 15:04:05"
 
 type ServiceConfig struct {
-	CredentialsJSON   *go_credentials.CredentialsJSON
+	CredentialsJson   *go_credentials.CredentialsJson
 	DefaultBucketName *string
 	TimestampLayout   *string
 }
 
 type Service struct {
-	//credentialsJSON *go_credentials.CredentialsJSON
 	storageClient   *storage.Client
 	bucket          *Bucket
 	context         context.Context
@@ -28,11 +27,11 @@ type Service struct {
 }
 
 func NewService(serviceConfig *ServiceConfig) (*Service, *errortools.Error) {
-	if serviceConfig.CredentialsJSON == nil {
+	if serviceConfig.CredentialsJson == nil {
 		return nil, errortools.ErrorMessage("CredentialsJSON not provided")
 	}
 
-	credentialsByte, err := json.Marshal(&serviceConfig.CredentialsJSON)
+	credentialsByte, err := json.Marshal(&serviceConfig.CredentialsJson)
 	if err != nil {
 		return nil, errortools.ErrorMessage(err)
 	}
