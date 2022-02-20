@@ -304,6 +304,8 @@ github.com/leapforce-libraries/go_google v0.0.0-20220220162409-00d72cd84c41 h1:S
 github.com/leapforce-libraries/go_google v0.0.0-20220220162409-00d72cd84c41/go.mod h1:SkmooNvyidmHarxL9rAmeupo+3H6DuFL0cYisyjpi+Q=
 github.com/leapforce-libraries/go_google v0.0.0-20220220162727-45327fe1fbd7 h1:caWM9EJYPKu3bsRw3NABXn94KnYOq8kKp1UcOds490s=
 github.com/leapforce-libraries/go_google v0.0.0-20220220162727-45327fe1fbd7/go.mod h1:SkmooNvyidmHarxL9rAmeupo+3H6DuFL0cYisyjpi+Q=
+github.com/leapforce-libraries/go_google v0.0.0-20220220163223-304493bbfe12 h1:8SyPRTHy9ri91o/h1kCNc5pkFuxIgfIR6YmaYgJck7g=
+github.com/leapforce-libraries/go_google v0.0.0-20220220163223-304493bbfe12/go.mod h1:SkmooNvyidmHarxL9rAmeupo+3H6DuFL0cYisyjpi+Q=
 github.com/leapforce-libraries/go_googlecloudstorage v0.0.0-20210428222229-1147c7986a8d/go.mod h1:5vTKz3d/EqR85Ge5dN6+emiKfMDh73mibAQRs7wQz8k=
 github.com/leapforce-libraries/go_googlecloudstorage v0.0.0-20210604121700-75c6cd17e42e/go.mod h1:6/17uiw7JJrdEwrrsF3Msr0WGEOMdjj04nRpraCilXo=
 github.com/leapforce-libraries/go_googlecloudstorage v0.0.0-20210730210510-f637436659e8/go.mod h1:rhMaXoTo/NGjDGapdvUq9dkTZHSKbA2/bOzPVHlKvgU=
