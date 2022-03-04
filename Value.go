@@ -42,6 +42,27 @@ func (service *Service) NewValue(objectName string, writeOnly bool) (*Value, boo
 	return &value, exists, nil
 }
 
+func (service *Service) ReadString(objectName string) (*string, *errortools.Error) {
+	value, exists, e := service.NewValue(objectName, false)
+	if e != nil {
+		return nil, e
+	}
+
+	if !exists {
+		fmt.Printf("Object '%s' does not exist\n", objectName)
+		return nil, nil
+	}
+
+	key := value.GetString()
+
+	if key == nil {
+		fmt.Printf("Object '%s' is empty\n", objectName)
+		return nil, nil
+	}
+
+	return key, nil
+}
+
 func (v Value) GetString() *string {
 	if len(v.bytes) == 0 {
 		return nil
