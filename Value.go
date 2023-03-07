@@ -15,11 +15,12 @@ import (
 type Value struct {
 	objectHandle *storage.ObjectHandle
 	service      *Service
+	isVirtual    bool
 	bytes        []byte
 	dirty        bool
 }
 
-func (service *Service) NewValue(objectName string, writeOnly bool) (*Value, bool, *errortools.Error) {
+func (service *Service) NewValue(objectName string, writeOnly bool) (*Value, *errortools.Error) {
 	value := Value{
 		objectHandle: service.bucket.Handle.Object(objectName),
 		service:      service,
@@ -27,28 +28,30 @@ func (service *Service) NewValue(objectName string, writeOnly bool) (*Value, boo
 	}
 
 	if writeOnly {
-		return &value, true, nil
+		return &value, nil
 	}
 
 	b, exists, e := service.read(value.objectHandle, service.context)
 	if e != nil {
-		return nil, exists, e
+		return nil, e
 	}
 
 	if exists {
 		value.bytes = *b
+	} else {
+		value.isVirtual = true
 	}
 
-	return &value, exists, nil
+	return &value, nil
 }
 
 func (service *Service) ReadString(objectName string) (*string, *errortools.Error) {
-	value, exists, e := service.NewValue(objectName, false)
+	value, e := service.NewValue(objectName, false)
 	if e != nil {
 		return nil, e
 	}
 
-	if !exists {
+	if value.isVirtual {
 		fmt.Printf("Object '%s' does not exist\n", objectName)
 		return nil, nil
 	}
@@ -61,6 +64,10 @@ func (service *Service) ReadString(objectName string) (*string, *errortools.Erro
 	}
 
 	return key, nil
+}
+
+func (v *Value) IsVirtual() bool {
+	return v.isVirtual
 }
 
 func (v Value) GetString() *string {

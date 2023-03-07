@@ -16,11 +16,12 @@ type Map struct {
 	sync.RWMutex
 	objectHandle *storage.ObjectHandle
 	service      *Service
+	isVirtual    bool
 	data         map[string]json.RawMessage
 	dirty        bool
 }
 
-func (service *Service) NewMap(objectName string, writeOnly bool) (*Map, bool, *errortools.Error) {
+func (service *Service) NewMap(objectName string, writeOnly bool) (*Map, *errortools.Error) {
 	m := Map{
 		objectHandle: service.bucket.Handle.Object(objectName),
 		service:      service,
@@ -28,23 +29,22 @@ func (service *Service) NewMap(objectName string, writeOnly bool) (*Map, bool, *
 
 	if writeOnly {
 		m.data = make(map[string]json.RawMessage)
-		return &m, true, nil
+		return &m, nil
 	}
 
-	exists, e := readMap(&m)
+	e := readMap(&m)
 	if e != nil {
-		return nil, exists, e
+		return nil, e
 	}
 
-	return &m, exists, nil
+	return &m, nil
 }
 
 func (service *Service) RefreshMap(m *Map) *errortools.Error {
-	_, e := readMap(m)
-	return e
+	return readMap(m)
 }
 
-func readMap(m *Map) (bool, *errortools.Error) {
+func readMap(m *Map) *errortools.Error {
 	m.Lock()
 	defer m.Unlock()
 
@@ -52,21 +52,24 @@ func readMap(m *Map) (bool, *errortools.Error) {
 
 	exists, e := m.service.readObject(m.objectHandle, m.service.context, &data)
 	if e != nil {
-		return false, e
+		return e
 	}
 
-	if exists {
-		m.data = data
-	}
+	m.data = data
+	m.isVirtual = !exists
 
-	return exists, nil
+	return nil
+}
+
+func (m *Map) IsVirtual() bool {
+	return m.isVirtual
 }
 
 func (m *Map) Keys() []string {
 	m.Lock()
 	defer m.Unlock()
 
-	keys := []string{}
+	var keys []string
 
 	if m.data != nil {
 		for key := range m.data {

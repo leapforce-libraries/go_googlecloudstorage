@@ -1,37 +1,38 @@
 module github.com/leapforce-libraries/go_googlecloudstorage
 
-go 1.18
+go 1.20
 
 require (
-	cloud.google.com/go v0.102.0
-	cloud.google.com/go/storage v1.22.1
-	github.com/leapforce-libraries/go_errortools v0.0.0-20211119145736-7b9b61c20618
-	github.com/leapforce-libraries/go_google v0.0.0-20220413201030-24cf0717d89e
-	github.com/leapforce-libraries/go_utilities v0.0.0-20220505202504-c3ea762c9a6f
-	google.golang.org/api v0.83.0
+	cloud.google.com/go v0.110.0
+	cloud.google.com/go/storage v1.29.0
+	github.com/leapforce-libraries/go_errortools v0.0.0-20230306211452-9ccee0cdafe8
+	github.com/leapforce-libraries/go_google v0.0.0-20230207215141-4e03131236a9
+	github.com/leapforce-libraries/go_utilities v0.0.0-20230124210046-7e78c8f41563
+	google.golang.org/api v0.111.0
 )
 
 require (
-	cloud.google.com/go/bigquery v1.31.0 // indirect
-	cloud.google.com/go/compute v1.6.1 // indirect
-	cloud.google.com/go/iam v0.3.0 // indirect
-	github.com/getsentry/sentry-go v0.9.0 // indirect
-	github.com/gofrs/uuid v4.2.0+incompatible // indirect
+	cloud.google.com/go/bigquery v1.45.0 // indirect
+	cloud.google.com/go/compute v1.18.0 // indirect
+	cloud.google.com/go/compute/metadata v0.2.3 // indirect
+	cloud.google.com/go/iam v0.11.0 // indirect
+	github.com/getsentry/sentry-go v0.19.0 // indirect
+	github.com/gofrs/uuid v4.3.1+incompatible // indirect
 	github.com/golang/groupcache v0.0.0-20200121045136-8c9f03a8e57e // indirect
 	github.com/golang/protobuf v1.5.2 // indirect
-	github.com/google/go-cmp v0.5.8 // indirect
-	github.com/google/uuid v1.1.2 // indirect
-	github.com/googleapis/gax-go/v2 v2.4.0 // indirect
-	github.com/googleapis/go-type-adapters v1.0.0 // indirect
-	github.com/leapforce-libraries/go_types v0.0.0-20220220161618-e9b1045c3ef2 // indirect
-	go.opencensus.io v0.23.0 // indirect
-	golang.org/x/net v0.0.0-20220607020251-c690dde0001d // indirect
-	golang.org/x/oauth2 v0.0.0-20220524215830-622c5d57e401 // indirect
-	golang.org/x/sys v0.0.0-20220520151302-bc2c85ada10a // indirect
-	golang.org/x/text v0.3.7 // indirect
-	golang.org/x/xerrors v0.0.0-20220517211312-f3a8303e98df // indirect
+	github.com/google/go-cmp v0.5.9 // indirect
+	github.com/google/uuid v1.3.0 // indirect
+	github.com/googleapis/enterprise-certificate-proxy v0.2.3 // indirect
+	github.com/googleapis/gax-go/v2 v2.7.0 // indirect
+	github.com/leapforce-libraries/go_types v0.0.0-20221223181720-62d92540aae9 // indirect
+	go.opencensus.io v0.24.0 // indirect
+	golang.org/x/net v0.7.0 // indirect
+	golang.org/x/oauth2 v0.5.0 // indirect
+	golang.org/x/sys v0.5.0 // indirect
+	golang.org/x/text v0.7.0 // indirect
+	golang.org/x/xerrors v0.0.0-20220907171357-04be3eba64a2 // indirect
 	google.golang.org/appengine v1.6.7 // indirect
-	google.golang.org/genproto v0.0.0-20220602131408-e326c6e8e9c8 // indirect
-	google.golang.org/grpc v1.47.0 // indirect
-	google.golang.org/protobuf v1.28.0 // indirect
+	google.golang.org/genproto v0.0.0-20230223222841-637eb2293923 // indirect
+	google.golang.org/grpc v1.53.0 // indirect
+	google.golang.org/protobuf v1.28.1 // indirect
 )
