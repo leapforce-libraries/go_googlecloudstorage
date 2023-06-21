@@ -1,17 +1,20 @@
 package googlecloudstorage
 
 import (
+	"cloud.google.com/go/storage"
 	"context"
 	"encoding/json"
 	"io/ioutil"
 
-	"cloud.google.com/go/storage"
 	errortools "github.com/leapforce-libraries/go_errortools"
 	go_credentials "github.com/leapforce-libraries/go_google/credentials"
 	"google.golang.org/api/option"
 )
 
-const defaultTimestampLayout string = "2006-01-02 15:04:05"
+const (
+	defaultTimestampLayout string = "2006-01-02 15:04:05"
+	BaseUrl                string = "https://storage.googleapis.com"
+)
 
 type ServiceConfig struct {
 	CredentialsJson   *go_credentials.CredentialsJson
